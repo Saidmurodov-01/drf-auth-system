@@ -50,3 +50,17 @@ class ProfileSerializer(serializers.ModelSerializer):
                 'required': False
             }
         }
+
+
+class PasswordChangeSerializer(serializers.Serializer):
+    password = serializers.CharField(max_length=128)
+    new_password = serializers.CharField(max_length=128)
+    confirm = serializers.CharField(max_length=128)
+    
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['confirm']:
+            raise serializers.ValidationError('password and confirm are nor the same value.')
+        
+        return super().validate(attrs)
+
+    

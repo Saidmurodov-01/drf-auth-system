@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import check_password
 
 from rest_framework.views import APIView
 from rest_framework.request import Request
@@ -7,7 +8,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.authentication import TokenAuthentication
 
-from .serializers import RegisterSerializer, UserSerializer, LoginSerializer, ProfileSerializer
+from .serializers import RegisterSerializer, UserSerializer, LoginSerializer, ProfileSerializer, PasswordChangeSerializer
 
 
 class RegisterView(APIView):
@@ -71,3 +72,23 @@ class ProfileView(APIView):
         serializer = UserSerializer(updated_user)
 
         return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+
+
+class PasswordChangeView(APIView):
+    authentication_classes = [TokenAuthentication]
+
+    def post(self, request: Request) -> Response:
+        serializer = PasswordChangeSerializer(data=request.data)
+
+        if serializer.is_valid(raise_exception=True):
+            user = request.user
+
+            if not check_password(serializer.validated_data['password'], user.password):
+                return Response('password is incorrect.', status=400)
+
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+
+            serializer = UserSerializer(user)
+            return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+        
