@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.authentication import TokenAuthentication
 
-from .serializers import RegisterSerializer, UserSerializer, LoginSerializer
+from .serializers import RegisterSerializer, UserSerializer, LoginSerializer, ProfileSerializer
 
 
 class RegisterView(APIView):
@@ -43,7 +43,31 @@ class LoginView(APIView):
 
 class LogoutView(APIView):
     authentication_classes = [TokenAuthentication]
+
     def post(self, request: Request) -> Response:
         request.user.auth_token.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProfileView(APIView):
+    authentication_classes = [TokenAuthentication]
+
+    def get(self, request: Request) -> Response:
+        user = request.user
+
+        serializer = UserSerializer(user)
+
+        return Response(serializer.data)
+
+    def put(self, request: Request) -> Response:
+        user = request.user
+
+        serializer = ProfileSerializer(data=request.data, partial=True)
+
+        if serializer.is_valid(raise_exception=True):
+            updated_user = serializer.update(user, serializer.validated_data)
+
+        serializer = UserSerializer(updated_user)
+
+        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
